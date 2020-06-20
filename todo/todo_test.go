@@ -1,4 +1,4 @@
-package main
+package todo
 
 import (
 	"net/http"
@@ -7,7 +7,7 @@ import (
 )
 
 func TestGetTodos(t *testing.T) {
-	router := setupRouter()
+	router := todo.SetupRouter()
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/todos", nil)
 
