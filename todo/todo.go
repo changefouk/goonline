@@ -1,31 +1,14 @@
 package todo
 
 import (
-	"database/sql"
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 
+	"github.com/changefouk/database"
 	"github.com/gin-gonic/gin"
 	_ "github.com/lib/pq"
 )
-
-type Todo struct {
-	ID     string `json:"id"`
-	Title  string `json:"title"`
-	Status string `json:"status"`
-}
-
-var db *sql.DB
-
-func init() {
-	var err error
-	db, err = sql.Open("postgres", os.Getenv("DATABASE_URL"))
-	if err != nil {
-		log.Fatal(err)
-	}
-}
 
 func createTodosHandler(c *gin.Context) {
 	t := Todo{}
@@ -34,7 +17,7 @@ func createTodosHandler(c *gin.Context) {
 		return
 	}
 
-	row := db.QueryRow("INSERT INTO todos (title, status) values ($1, $2)  RETURNING id", t.Title, t.Status)
+	row := database.Connect().QueryRow("INSERT INTO todos (title, status) values ($1, $2)  RETURNING id", t.Title, t.Status)
 
 	err := row.Scan(&t.ID)
 	if err != nil {
@@ -48,7 +31,7 @@ func createTodosHandler(c *gin.Context) {
 func getTodosHandler(c *gin.Context) {
 	status := c.Query("status")
 
-	stmt, err := db.Prepare("SELECT id, title, status FROM todos")
+	stmt, err := database.Connect().Prepare("SELECT id, title, status FROM todos")
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, err)
 		return
@@ -91,7 +74,7 @@ func getTodosHandler(c *gin.Context) {
 func getTodoByIdHandler(c *gin.Context) {
 	id := c.Param("id")
 
-	stmt, err := db.Prepare("SELECT id, title, status FROM todos where id=$1")
+	stmt, err := database.Connect().Prepare("SELECT id, title, status FROM todos where id=$1")
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, err)
 		return
@@ -112,7 +95,7 @@ func getTodoByIdHandler(c *gin.Context) {
 
 func updateTodosHandler(c *gin.Context) {
 	id := c.Param("id")
-	stmt, err := db.Prepare("SELECT id, title, status FROM todos where id=$1")
+	stmt, err := database.Connect().Prepare("SELECT id, title, status FROM todos where id=$1")
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, err)
 		return
@@ -133,7 +116,7 @@ func updateTodosHandler(c *gin.Context) {
 		return
 	}
 
-	stmt, err = db.Prepare("UPDATE todos SET status=$2, title=$3 WHERE id=$1;")
+	stmt, err = database.Connect().Prepare("UPDATE todos SET status=$2, title=$3 WHERE id=$1;")
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, err)
 		return
@@ -149,7 +132,7 @@ func updateTodosHandler(c *gin.Context) {
 
 func deleteTodosHandler(c *gin.Context) {
 	id := c.Param("id")
-	stmt, err := db.Prepare("DELETE FROM todos WHERE id = $1")
+	stmt, err := database.Connect().Prepare("DELETE FROM todos WHERE id = $1")
 	if err != nil {
 		log.Fatal("can't prepare delete statement", err)
 	}
